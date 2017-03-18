@@ -24,7 +24,6 @@ int outputToRelayPin = 8;
 int control = 0;
 
 void setup() {
-
   // Debugging output
   Serial.begin(9600);
   
@@ -44,7 +43,6 @@ void setup() {
 }
 
 void loop() {
-
   // Setup variables
   uint8_t button = lcd.readButtons();
   
@@ -53,14 +51,15 @@ void loop() {
   int getVal_BatteryVoltage;
 
   float SolarPanelCurrent;
+  float SolarPanelCurrentAfterCalculation;
   float SolarPanelVoltage;
   float BatteryVoltage;
 
   int analogReadsPerAverageCalculation = 10;
-  float voltageDividerRatio = 4.44;
+  float voltageDividerRatioBattery = 4.92;
+  float voltageDividerRatioSolar = 5.17;
 
-  for (int x=0; x<analogReadsPerAverageCalculation; x++){
-    
+  for (int x = 0; x < analogReadsPerAverageCalculation; x++){
     // Read the all the analog inputs 
     getVal_SolarPanelCurrent = analogRead(SolarPanelCurrent_IN);
     getVal_SolarPanelVoltage = analogRead(SolarPanelVoltage_IN);
@@ -76,91 +75,77 @@ void loop() {
   BatteryVoltage = BatteryVoltage/analogReadsPerAverageCalculation;
 
   // Calculate the voltage and current
-  SolarPanelCurrent = (float)SolarPanelCurrent*voltageDividerRatio*(5.0/1023.0);  // This line needs Voltage per Ampere correction, change the 10 to correct value.
-  SolarPanelVoltage = (float)SolarPanelVoltage*voltageDividerRatio*(5.0/1023.0);
-  BatteryVoltage = (float)BatteryVoltage*voltageDividerRatio*(5.00/1023.0);
+  SolarPanelCurrent = (float)SolarPanelCurrent*(5.0/1023.0);  // This line needs Voltage per Ampere correction, change the 10 to correct value.
+  SolarPanelCurrentAfterCalculation = (SolarPanelCurrent-0.51)/0.185;
+  SolarPanelVoltage = (float)SolarPanelVoltage*voltageDividerRatioSolar*(5.0/1023.0);
+  BatteryVoltage = (float)BatteryVoltage*voltageDividerRatioBattery*(5.0/1023.0);
   
   // Check battery voltage to control the relay
-  if(BatteryVoltage > 11.8){
-    digitalWrite(outputToRelayPin, HIGH);
+  if(BatteryVoltage < 11.8){
+    digitalWrite(outputToRelayPin, LOW);
     lcd.setBacklight(RED);
+  } else{
+    digitalWrite(outputToRelayPin, HIGH);
+    lcd.setBacklight(BLUE);
+  }
+  
+  if(button){
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print("BATTERY VOLTAGE");
-    lcd.setCursor(0,1);
-    lcd.print("IN DANGER ZONE");
-    delay(5000);
-    lcd.clear();
+    if(button & BUTTON_UP){
+      control--;
+    }
+    if(button & BUTTON_DOWN){
+      control++;
+    }
+    if(button & BUTTON_LEFT){
+      control--;
+    }
+    if(button & BUTTON_RIGHT){
+      control++;
+    }
+    if(button & BUTTON_SELECT){
+      control = 0;
+    }
+  }
+  
+  if(abs(control%3) == 0){
+    delay(200);
+    display_solar_panel_current(SolarPanelCurrentAfterCalculation);
+  }
+  else if(abs(control%3) == 1){
+    delay(200);
+    display_solar_panel_voltage(SolarPanelVoltage);
+  }
+  else if(abs(control%3) == 2){
+    delay(200);
     display_battery_voltage(BatteryVoltage);
-    delay(5000);
   }
   else{
-    digitalWrite(outputToRelayPin, LOW);
-    lcd.setBacklight(BLUE);
-    delay(10);
-
-  if(button){
-      lcd.clear();
-      lcd.setCursor(0,0);
-      if(button & BUTTON_UP){
-        control--;
-      }
-      if(button & BUTTON_DOWN){
-        control++;
-      }
-      if(button & BUTTON_LEFT){
-        control--;
-      }
-      if(button & BUTTON_RIGHT){
-        control++;
-      }
-      if(button & BUTTON_SELECT){
-        control = 0;
-      }
-    }
-  
-    if(abs(control%3) == 0){
-      delay(500);
-      display_solar_panel_current(SolarPanelCurrent);
-    }
-    else if(abs(control%3) == 1){
-      delay(500);
-      display_solar_panel_voltage(SolarPanelVoltage);
-    }
-    else if(abs(control%3) == 2){
-      delay(500);
-      display_battery_voltage(BatteryVoltage);
-    }
-    else{
-      lcd.clear();
-      lcd.setCursor(0,0);
-    }
-    
+    lcd.clear();
+    lcd.setCursor(0,0);
   }
-
-
-
 }
 
-void display_solar_panel_current(float SolarPanelCurrent){
+void display_solar_panel_current(float SolarPanelCurrentAfterCalculation){
   lcd.setCursor(0, 0);
   lcd.print("SOLAR PANEL");
   lcd.setCursor(0, 1);
-  lcd.print("CURRENT = ");
-  lcd.setCursor(10,1);
-  lcd.print(SolarPanelCurrent);
-  lcd.setCursor(15,1);
-  lcd.print("A");
+  lcd.print("CURRENT=");
+  lcd.setCursor(9,1);
+  lcd.print(SolarPanelCurrentAfterCalculation);
+  lcd.setCursor(14,1);
+  lcd.print("mA");
 }
 
 void display_solar_panel_voltage(float SolarPanelVoltage){
   lcd.setCursor(0, 0);
   lcd.print("SOLAR PANEL");
   lcd.setCursor(0, 1);
-  lcd.print("VOLTAGE = ");
-  lcd.setCursor(10,1);
+  lcd.print("VOLTAGE=");
+  lcd.setCursor(9,1);
   lcd.print(SolarPanelVoltage);
-  lcd.setCursor(15,1);
+  lcd.setCursor(13,1);
   lcd.print("V");
 }
 
@@ -168,9 +153,9 @@ void display_battery_voltage(float BatteryVoltage){
   lcd.setCursor(0, 0);
   lcd.print("BATTERY");
   lcd.setCursor(0, 1);
-  lcd.print("VOLTAGE = ");
-  lcd.setCursor(10,1);
+  lcd.print("VOLTAGE=");
+  lcd.setCursor(9,1);
   lcd.print(BatteryVoltage);
-  lcd.setCursor(15,1);
+  lcd.setCursor(14,1);
   lcd.print("V");
 }
