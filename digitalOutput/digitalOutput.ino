@@ -47,16 +47,38 @@ void loop() {
 
   // Setup variables
   uint8_t button = lcd.readButtons();
+  
+  int getVal_SolarPanelCurrent;
+  int getVal_SolarPanelVoltage;
+  int getVal_BatteryVoltage;
 
-  // Read the all the analog inputs 
-  int getVal_SolarPanelCurrent = analogRead(SolarPanelCurrent_IN);
-  int getVal_SolarPanelVoltage = analogRead(SolarPanelVoltage_IN);
-  int getVal_BatteryVoltage = analogRead(BatteryVoltage_IN);
+  float SolarPanelCurrent;
+  float SolarPanelVoltage;
+  float BatteryVoltage;
+
+  int analogReadsPerAverageCalculation = 10;
+  float voltageDividerRatio = 4.44;
+
+  for (int x=0; x<analogReadsPerAverageCalculation; x++){
+    
+    // Read the all the analog inputs 
+    getVal_SolarPanelCurrent = analogRead(SolarPanelCurrent_IN);
+    getVal_SolarPanelVoltage = analogRead(SolarPanelVoltage_IN);
+    getVal_BatteryVoltage = analogRead(BatteryVoltage_IN);
+
+    SolarPanelCurrent = SolarPanelCurrent + getVal_SolarPanelCurrent;
+    SolarPanelVoltage = SolarPanelVoltage + getVal_SolarPanelVoltage;
+    BatteryVoltage = BatteryVoltage + getVal_BatteryVoltage;
+  }
+
+  SolarPanelCurrent = SolarPanelCurrent/analogReadsPerAverageCalculation;
+  SolarPanelVoltage = SolarPanelVoltage/analogReadsPerAverageCalculation;
+  BatteryVoltage = BatteryVoltage/analogReadsPerAverageCalculation;
 
   // Calculate the voltage and current
-  float SolarPanelCurrent = (float)getVal_SolarPanelCurrent*(5.0/1023.0)/10;  // This line needs Voltage per Ampere correction, change the 10 to correct value.
-  float SolarPanelVoltage = (float)getVal_SolarPanelVoltage*(5.0/1023.0)*4/1; // Measure those resistors and change the 4/1 will make the value more accurate.
-  float BatteryVoltage = (float)getVal_BatteryVoltage*(5.0/1023.0);
+  SolarPanelCurrent = (float)SolarPanelCurrent*voltageDividerRatio*(5.0/1023.0);  // This line needs Voltage per Ampere correction, change the 10 to correct value.
+  SolarPanelVoltage = (float)SolarPanelVoltage*voltageDividerRatio*(5.0/1023.0); // Measure those resistors and change the 4/1 will make the value more accurate.
+  BatteryVoltage = (float)BatteryVoltage*voltageDividerRatio*(5.00/1023.0);
   
   // Check battery voltage to control the relay
   if(BatteryVoltage > 11.8){
@@ -98,12 +120,15 @@ void loop() {
     }
   
     if(abs(control%3) == 0){
+      delay(50);
       display_solar_panel_current(SolarPanelCurrent);
     }
     else if(abs(control%3) == 1){
+      delay(500);
       display_solar_panel_voltage(SolarPanelVoltage);
     }
     else if(abs(control%3) == 2){
+      delay(50);
       display_battery_voltage(BatteryVoltage);
     }
     else{
