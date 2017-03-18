@@ -77,7 +77,7 @@ void loop() {
 
   // Calculate the voltage and current
   SolarPanelCurrent = (float)SolarPanelCurrent*voltageDividerRatio*(5.0/1023.0);  // This line needs Voltage per Ampere correction, change the 10 to correct value.
-  SolarPanelVoltage = (float)SolarPanelVoltage*voltageDividerRatio*(5.0/1023.0); // Measure those resistors and change the 4/1 will make the value more accurate.
+  SolarPanelVoltage = (float)SolarPanelVoltage*voltageDividerRatio*(5.0/1023.0);
   BatteryVoltage = (float)BatteryVoltage*voltageDividerRatio*(5.00/1023.0);
   
   // Check battery voltage to control the relay
@@ -120,7 +120,7 @@ void loop() {
     }
   
     if(abs(control%3) == 0){
-      delay(50);
+      delay(500);
       display_solar_panel_current(SolarPanelCurrent);
     }
     else if(abs(control%3) == 1){
@@ -128,7 +128,7 @@ void loop() {
       display_solar_panel_voltage(SolarPanelVoltage);
     }
     else if(abs(control%3) == 2){
-      delay(50);
+      delay(500);
       display_battery_voltage(BatteryVoltage);
     }
     else{
