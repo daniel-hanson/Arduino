@@ -56,8 +56,7 @@ void loop() {
   float BatteryVoltage;
 
   int analogReadsPerAverageCalculation = 10;
-  //float voltageDividerRatioBattery = 4.92;
-  float voltageDividerRatioBattery = 2.52;
+  float voltageDividerRatioBattery = 4.97;
   float voltageDividerRatioSolar = 5.17;
 
   for (int x = 0; x < analogReadsPerAverageCalculation; x++){
